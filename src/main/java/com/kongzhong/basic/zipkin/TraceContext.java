@@ -50,7 +50,12 @@ public class TraceContext {
     }
 
     public static void addSpanAndUpdate(Span span) {
-        SPANS.get().add(span);
+        List<Span> spans = SPANS.get();
+        if (spans == null) {
+            start();
+            spans = SPANS.get();
+        }
+        spans.add(span);
         TRACE_ID.set(span.getTrace_id());
         SPAN_ID.set(span.getId());
     }

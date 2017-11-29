@@ -20,8 +20,4 @@ public class ZipkinUtils {
 
     }
 
-    public static String getAppId(){
-        return AppConfiguration.getAppId();
-    }
-
 }
