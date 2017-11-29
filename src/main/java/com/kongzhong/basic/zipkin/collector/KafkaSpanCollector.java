@@ -22,7 +22,6 @@ import java.util.concurrent.Future;
  * // @deprecated replaced by {@link zipkin2.reporter.AsyncReporter} and {@code KafkaSender}
  * located in the "io.zipkin.reporter2:zipkin-sender-kafka11" dependency.
  */
-//@Deprecated
 public final class KafkaSpanCollector extends AbstractSpanCollector {
 
     @AutoValue
