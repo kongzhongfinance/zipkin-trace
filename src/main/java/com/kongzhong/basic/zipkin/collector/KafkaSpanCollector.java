@@ -27,6 +27,7 @@ public final class KafkaSpanCollector extends AbstractSpanCollector {
 
     @AutoValue
     public static abstract class Config {
+
         public static Builder builder() {
             return new AutoValue_KafkaSpanCollector_Config.Builder()
                     .topic("zipkin")
