@@ -29,6 +29,19 @@ public class TraceContext {
      */
     private static ThreadLocal<List<Span>> SPANS = new InheritableThreadLocal<>();
 
+    /**
+     * The current trace's root span
+     */
+    private static ThreadLocal<Span> ROOT_SPAN = new InheritableThreadLocal<>();
+
+    public static void setRootSpan(Span rootSpan) {
+        ROOT_SPAN.set(rootSpan);
+    }
+
+    public static Span getRootSpan() {
+        return ROOT_SPAN.get();
+    }
+
     public static void setTraceId(Long traceId) {
         TRACE_ID.set(traceId);
     }
