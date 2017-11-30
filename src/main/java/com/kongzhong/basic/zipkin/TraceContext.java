@@ -89,8 +89,7 @@ public class TraceContext {
     }
 
     public static void print() {
-        log.debug("Current thread: [{}], trace context: traceId={}, spanId={}, spans={}",
-                Thread.currentThread().getName(), getTraceId(), getSpanId(), getSpans());
+        log.debug("Current thread: [{}], trace context: traceId={}, spanId={}", Thread.currentThread().getName(), Long.toHexString(getTraceId()), Long.toHexString(getSpanId()));
     }
 
 }
