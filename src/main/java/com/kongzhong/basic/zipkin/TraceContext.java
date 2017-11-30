@@ -81,6 +81,7 @@ public class TraceContext {
         TRACE_ID.remove();
         SPAN_ID.remove();
         SPANS.remove();
+        ROOT_SPAN.remove();
     }
 
     public static void start() {
