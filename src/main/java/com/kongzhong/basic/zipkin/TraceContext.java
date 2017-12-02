@@ -17,22 +17,22 @@ public class TraceContext {
     /**
      * The trace chain global id
      */
-    private static ThreadLocal<Long> TRACE_ID = new InheritableThreadLocal<>();
+    private static ThreadLocal<Long> TRACE_ID = new ThreadLocal<>();
 
     /**
      * The previous trace span's id, it will be next span's parent id if it isn't null
      */
-    private static ThreadLocal<Long> SPAN_ID = new InheritableThreadLocal<>();
+    private static ThreadLocal<Long> SPAN_ID = new ThreadLocal<>();
 
     /**
      * The current trace's span list
      */
-    private static ThreadLocal<List<Span>> SPANS = new InheritableThreadLocal<>();
+    private static ThreadLocal<List<Span>> SPANS = new ThreadLocal<>();
 
     /**
      * The current trace's root span
      */
-    private static ThreadLocal<Span> ROOT_SPAN = new InheritableThreadLocal<>();
+    private static ThreadLocal<Span> ROOT_SPAN = new ThreadLocal<>();
 
     public static void setRootSpan(Span rootSpan) {
         ROOT_SPAN.set(rootSpan);
