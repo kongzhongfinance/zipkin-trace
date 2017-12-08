@@ -4,6 +4,8 @@ import com.twitter.zipkin.gen.Span;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,6 +96,10 @@ public class TraceContext {
                     getTraceId() == null ? null : Long.toHexString(getTraceId()),
                     getSpanId() == null ? null : Long.toHexString(getSpanId()));
         }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(LocalDate.now().plusDays(-1).format(DateTimeFormatter.ISO_DATE));
     }
 
 }
