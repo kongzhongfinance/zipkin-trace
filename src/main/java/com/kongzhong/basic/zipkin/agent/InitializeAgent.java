@@ -16,8 +16,7 @@ public class InitializeAgent {
     public static synchronized AbstractAgent initAndGetAgent(String url, String topic) {
         if (null == abstractAgent) {
             try {
-                KafkaAgent kafkaAgent = new KafkaAgent(url, topic);
-                InitializeAgent.abstractAgent = kafkaAgent;
+                InitializeAgent.abstractAgent = new KafkaAgent(url, topic);
             } catch (Exception e) {
                 log.error("Kafka Agent 初始化失败", e);
             }

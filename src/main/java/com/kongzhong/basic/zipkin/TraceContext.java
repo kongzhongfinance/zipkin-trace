@@ -1,11 +1,10 @@
 package com.kongzhong.basic.zipkin;
 
+import com.twitter.zipkin.gen.BinaryAnnotation;
 import com.twitter.zipkin.gen.Span;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,11 +64,7 @@ public class TraceContext {
     }
 
     public static void addSpanAndUpdate(Span span) {
-        List<Span> spans = SPANS.get();
-        if (spans == null) {
-            start();
-            spans = SPANS.get();
-        }
+        List<Span> spans = getSafelySpans();
         spans.add(span);
         TRACE_ID.set(span.getTrace_id());
         SPAN_ID.set(span.getId());
@@ -98,4 +93,27 @@ public class TraceContext {
         }
     }
 
+    public static void addExtInfo(String key, String value) {
+        Span lastSpan = getLastSpan();
+        if (lastSpan != null) {
+            lastSpan.addToBinary_annotations(BinaryAnnotation.create(key, value, null));
+        }
+    }
+
+    private static List<Span> getSafelySpans() {
+        List<Span> spans = SPANS.get();
+        if (spans == null) {
+            start();
+            spans = SPANS.get();
+        }
+        return spans;
+    }
+
+    private static Span getLastSpan() {
+        List<Span> spans = SPANS.get();
+        if (spans == null || spans.isEmpty()) {
+            return null;
+        }
+        return spans.get(spans.size() - 1);
+    }
 }
