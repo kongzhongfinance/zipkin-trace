@@ -3,10 +3,12 @@ package com.kongzhong.basic.zipkin.agent;
 import com.github.kristofa.brave.SpanCollectorMetricsHandler;
 import com.kongzhong.basic.zipkin.SimpleMetricsHandler;
 import com.kongzhong.basic.zipkin.collector.HttpSpanCollector;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * HttpAgent
  */
+@Slf4j
 public class HttpAgent extends AbstractAgent {
 
     public HttpAgent(String server) {
@@ -19,6 +21,6 @@ public class HttpAgent extends AbstractAgent {
                         .build();
 
         super.collector = HttpSpanCollector.create(server, config, metrics);
+        log.info("HttpAgent 初始化完成.");
     }
-
 }
