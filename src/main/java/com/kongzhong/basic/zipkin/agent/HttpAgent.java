@@ -21,6 +21,6 @@ public class HttpAgent extends AbstractAgent {
                         .build();
 
         super.collector = HttpSpanCollector.create(server, config, metrics);
-        log.info("HttpAgent 初始化完成.");
+        log.info("HttpAgent 初始化完成. server={}", server);
     }
 }
