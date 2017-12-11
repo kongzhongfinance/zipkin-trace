@@ -98,8 +98,4 @@ public class TraceContext {
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println(LocalDate.now().plusDays(-1).format(DateTimeFormatter.ISO_DATE));
-    }
-
 }
