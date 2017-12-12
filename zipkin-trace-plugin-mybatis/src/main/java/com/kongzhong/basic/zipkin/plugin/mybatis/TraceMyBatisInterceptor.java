@@ -22,7 +22,6 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 import java.sql.Connection;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -56,8 +55,6 @@ public class TraceMyBatisInterceptor implements Interceptor {
     }
 
     private void init(String url, String topic) {
-        log.info("TraceMyBatisInterceptor 初始化...");
-
         try {
             this.agent = InitializeAgent.getAgent();
             if (null == this.agent && url != null && topic != null) {
@@ -69,47 +66,40 @@ public class TraceMyBatisInterceptor implements Interceptor {
 
         if (this.agent != null) {
             this.inited = true;
-            log.info("TraceMyBatisInterceptor 初始化完成");
-        } else {
-            log.info("TraceMyBatisInterceptor 初始化失败 url={} topic={}", url, topic);
         }
+        log.info("TraceMyBatisInterceptor inited=[{}] url={} topic={}", this.inited, url, topic);
     }
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        // new trace
-        Span span = this.startTrace();
+
 
         Object target = invocation.getTarget();
-        if (target instanceof Executor && span != null) {
+        if (target instanceof Executor) {
             Executor executor = (Executor) target;
             Object[] args = invocation.getArgs();
 
             try {
                 if (args != null && args.length > 0 && args[0] instanceof MappedStatement) {
                     MappedStatement statement = (MappedStatement) args[0];
-                    String id = statement.getId();
-                    String mapper = id;
-                    int dotIndex = id.lastIndexOf(".");
-                    if (dotIndex != -1) {
-                        mapper = id.substring(0, dotIndex);
-                    }
+                    String mapper = statement.getId();
 
                     Connection connection = executor.getTransaction().getConnection();
                     String url = connection.getMetaData().getURL();
 
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.mapper", mapper, null));
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.database", url, null));
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.method", statement.getSqlCommandType().name(), null));
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.sql", statement.getBoundSql(null).getSql(), null));
+                    // new trace
+                    Span span = this.startTrace(url, mapper);
+                    if (span != null) {
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.mapper", mapper, null));
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.database", url, null));
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.method", statement.getSqlCommandType().name(), null));
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.sql", statement.getBoundSql(null).getSql(), null));
+                        //end trace
+                        this.endTrace(span);
+                    }
                 }
             } catch (Exception e) {
                 log.error("Trace DB [解析异常]", e);
-            } finally {
-                //send trace
-                this.endTrace(span);
-                // clear trace context
-                TraceContext.clear();
             }
         }
         return invocation.proceed();
@@ -124,7 +114,7 @@ public class TraceMyBatisInterceptor implements Interceptor {
     public void setProperties(Properties properties) {
     }
 
-    private Span startTrace() {
+    private Span startTrace(String name, String method) {
         long id = Ids.get();
         TraceContext.setSpanId(id);
 
@@ -135,21 +125,19 @@ public class TraceMyBatisInterceptor implements Interceptor {
         // span basic data
         long timestamp = System.currentTimeMillis() * 1000;
 
+        apiSpan.setName(method);
+
         apiSpan.setId(id);
         apiSpan.setTrace_id(TraceContext.getTraceId());
-        apiSpan.setName(AppConfiguration.getAppId());
         apiSpan.setTimestamp(timestamp);
 
-        // sr annotation
+        // cs annotation
         apiSpan.addToAnnotations(
-                Annotation.create(timestamp, TraceConstants.ANNO_SR,
-                        Endpoint.create(AppConfiguration.getAppId(), ServerInfo.IP4)));
+                Annotation.create(timestamp, TraceConstants.ANNO_CS,
+                        Endpoint.create(name, ServerInfo.IP4)));
 
-        TraceContext.setRootSpan(apiSpan);
-        if (log.isDebugEnabled()) {
-            log.debug("Trace DB name: {}", apiSpan.getName());
-            TraceContext.print();
-        }
+        TraceContext.print();
+
         // prepare trace context
         TraceContext.addSpanAndUpdate(apiSpan);
 
@@ -162,31 +150,15 @@ public class TraceMyBatisInterceptor implements Interceptor {
                 return;
             }
             // end span
-
             long times = (System.currentTimeMillis() * 1000) - span.getTimestamp();
-            // ss annotation
+            // cr annotation
             long time = System.currentTimeMillis() * 1000;
             span.addToAnnotations(
-                    Annotation.create(time, TraceConstants.ANNO_SS,
+                    Annotation.create(time, TraceConstants.ANNO_CR,
                             Endpoint.create(AppConfiguration.getAppId(), ServerInfo.IP4)));
 
             span.setDuration(times);
 
-            // send trace spans
-            try {
-                List<Span> spans = TraceContext.getSpans();
-                agent.send(spans);
-                if (log.isDebugEnabled()) {
-                    log.debug("DB Send trace data {}.", TraceContext.getSpans());
-                }
-            } catch (Exception e) {
-                log.error("DB 发送到Trace失败", e);
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("DB Trace clear. traceId={}", TraceContext.getTraceId());
-                TraceContext.print();
-            }
         } catch (Exception e) {
             log.error("endTrace error ", e);
         }
