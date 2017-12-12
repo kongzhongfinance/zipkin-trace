@@ -45,44 +45,38 @@ import java.util.Properties;
 public class TraceMyBatisInterceptor implements Interceptor {
     private AbstractAgent agent;
 
-    private final Object lock = new Object();
     private boolean inited = false;
 
     public TraceMyBatisInterceptor() {
-        init();
+        init(null, null);
     }
 
-    private void init() {
-        log.info("初始化 TraceMyBatisInterceptor...");
+    public TraceMyBatisInterceptor(String url, String topic) {
+        init(url, topic);
+    }
+
+    private void init(String url, String topic) {
+        log.info("TraceMyBatisInterceptor 初始化...");
 
         try {
-            if (!this.inited) {
-                synchronized (lock) {
-                    this.agent = InitializeAgent.getAgent();
-                    if (this.agent != null) {
-                        this.inited = true;
-                        log.info("初始化Trace DB客户端完成.");
-                    }
-                }
+            this.agent = InitializeAgent.getAgent();
+            if (null == this.agent && url != null && topic != null) {
+                this.agent = InitializeAgent.initAndGetAgent(url, topic);
             }
         } catch (Exception e) {
             log.error("初始化Trace客户端失败", e);
+        }
+
+        if (this.agent != null) {
+            this.inited = true;
+            log.info("TraceMyBatisInterceptor 初始化完成");
+        } else {
+            log.info("TraceMyBatisInterceptor 初始化失败 url={} topic={}", url, topic);
         }
     }
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        //Check是否初始化完成
-        if (!this.inited) {
-            init();
-
-            //还是失败就不Trace了
-            if (!this.inited) {
-                log.warn("初始化Trace DB客户端失败 [忽略]");
-                return invocation.proceed();
-            }
-        }
-
         // new trace
         Span span = this.startTrace();
 
