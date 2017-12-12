@@ -3,6 +3,9 @@ package com.kongzhong.basic.zipkin.util;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+/**
+ * Created by IFT8 on 2017/12/12.
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class AppConfiguration {
     private static volatile String appId = System.getProperty("APPID");
