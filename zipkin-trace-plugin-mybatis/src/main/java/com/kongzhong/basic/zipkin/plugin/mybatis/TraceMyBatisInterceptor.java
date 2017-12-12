@@ -56,8 +56,6 @@ public class TraceMyBatisInterceptor implements Interceptor {
     }
 
     private void init(String url, String topic) {
-        log.info("TraceMyBatisInterceptor 初始化...");
-
         try {
             this.agent = InitializeAgent.getAgent();
             if (null == this.agent && url != null && topic != null) {
@@ -69,10 +67,8 @@ public class TraceMyBatisInterceptor implements Interceptor {
 
         if (this.agent != null) {
             this.inited = true;
-            log.info("TraceMyBatisInterceptor 初始化完成");
-        } else {
-            log.info("TraceMyBatisInterceptor 初始化失败 url={} topic={}", url, topic);
         }
+        log.info("TraceMyBatisInterceptor inited=[{}] url={} topic={}", this.inited, url, topic);
     }
 
     @Override
