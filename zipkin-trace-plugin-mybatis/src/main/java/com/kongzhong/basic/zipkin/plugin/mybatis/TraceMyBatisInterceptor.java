@@ -82,12 +82,7 @@ public class TraceMyBatisInterceptor implements Interceptor {
             try {
                 if (args != null && args.length > 0 && args[0] instanceof MappedStatement) {
                     MappedStatement statement = (MappedStatement) args[0];
-                    String id = statement.getId();
-                    String mapper = id;
-                    int dotIndex = id.lastIndexOf(".");
-                    if (dotIndex != -1) {
-                        mapper = id.substring(0, dotIndex);
-                    }
+                    String mapper = statement.getId();
 
                     Connection connection = executor.getTransaction().getConnection();
                     String url = connection.getMetaData().getURL();
