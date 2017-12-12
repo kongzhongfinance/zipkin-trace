@@ -72,11 +72,10 @@ public class TraceMyBatisInterceptor implements Interceptor {
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        // new trace
-        Span span = this.startTrace();
+
 
         Object target = invocation.getTarget();
-        if (target instanceof Executor && span != null) {
+        if (target instanceof Executor) {
             Executor executor = (Executor) target;
             Object[] args = invocation.getArgs();
 
@@ -93,18 +92,19 @@ public class TraceMyBatisInterceptor implements Interceptor {
                     Connection connection = executor.getTransaction().getConnection();
                     String url = connection.getMetaData().getURL();
 
-                    span.setName(url);
-
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.mapper", mapper, null));
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.database", url, null));
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.method", statement.getSqlCommandType().name(), null));
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.sql", statement.getBoundSql(null).getSql(), null));
+                    // new trace
+                    Span span = this.startTrace(url, mapper);
+                    if (span != null) {
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.mapper", mapper, null));
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.database", url, null));
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.method", statement.getSqlCommandType().name(), null));
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.sql", statement.getBoundSql(null).getSql(), null));
+                        //end trace
+                        this.endTrace(span);
+                    }
                 }
             } catch (Exception e) {
                 log.error("Trace DB [解析异常]", e);
-            } finally {
-                //end trace
-                this.endTrace(span);
             }
         }
         return invocation.proceed();
@@ -119,7 +119,7 @@ public class TraceMyBatisInterceptor implements Interceptor {
     public void setProperties(Properties properties) {
     }
 
-    private Span startTrace() {
+    private Span startTrace(String name, String method) {
         long id = Ids.get();
         TraceContext.setSpanId(id);
 
@@ -130,14 +130,16 @@ public class TraceMyBatisInterceptor implements Interceptor {
         // span basic data
         long timestamp = System.currentTimeMillis() * 1000;
 
+        apiSpan.setName(method);
+
         apiSpan.setId(id);
         apiSpan.setTrace_id(TraceContext.getTraceId());
         apiSpan.setTimestamp(timestamp);
 
-        // sr annotation
+        // cs annotation
         apiSpan.addToAnnotations(
-                Annotation.create(timestamp, TraceConstants.ANNO_SR,
-                        Endpoint.create(AppConfiguration.getAppId(), ServerInfo.IP4)));
+                Annotation.create(timestamp, TraceConstants.ANNO_CS,
+                        Endpoint.create(name, ServerInfo.IP4)));
 
         TraceContext.print();
 
@@ -154,10 +156,10 @@ public class TraceMyBatisInterceptor implements Interceptor {
             }
             // end span
             long times = (System.currentTimeMillis() * 1000) - span.getTimestamp();
-            // ss annotation
+            // cr annotation
             long time = System.currentTimeMillis() * 1000;
             span.addToAnnotations(
-                    Annotation.create(time, TraceConstants.ANNO_SS,
+                    Annotation.create(time, TraceConstants.ANNO_CR,
                             Endpoint.create(AppConfiguration.getAppId(), ServerInfo.IP4)));
 
             span.setDuration(times);
