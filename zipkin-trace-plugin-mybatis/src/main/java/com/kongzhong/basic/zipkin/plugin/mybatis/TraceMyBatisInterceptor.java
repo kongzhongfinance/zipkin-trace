@@ -22,7 +22,6 @@ import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 
 import java.sql.Connection;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -94,6 +93,8 @@ public class TraceMyBatisInterceptor implements Interceptor {
                     Connection connection = executor.getTransaction().getConnection();
                     String url = connection.getMetaData().getURL();
 
+                    span.setName(url);
+
                     span.addToBinary_annotations(BinaryAnnotation.create("SQL.mapper", mapper, null));
                     span.addToBinary_annotations(BinaryAnnotation.create("SQL.database", url, null));
                     span.addToBinary_annotations(BinaryAnnotation.create("SQL.method", statement.getSqlCommandType().name(), null));
@@ -102,10 +103,8 @@ public class TraceMyBatisInterceptor implements Interceptor {
             } catch (Exception e) {
                 log.error("Trace DB [解析异常]", e);
             } finally {
-                //send trace
+                //end trace
                 this.endTrace(span);
-                // clear trace context
-                TraceContext.clear();
             }
         }
         return invocation.proceed();
@@ -133,7 +132,6 @@ public class TraceMyBatisInterceptor implements Interceptor {
 
         apiSpan.setId(id);
         apiSpan.setTrace_id(TraceContext.getTraceId());
-        apiSpan.setName(AppConfiguration.getAppId());
         apiSpan.setTimestamp(timestamp);
 
         // sr annotation
@@ -141,11 +139,8 @@ public class TraceMyBatisInterceptor implements Interceptor {
                 Annotation.create(timestamp, TraceConstants.ANNO_SR,
                         Endpoint.create(AppConfiguration.getAppId(), ServerInfo.IP4)));
 
-        TraceContext.setRootSpan(apiSpan);
-        if (log.isDebugEnabled()) {
-            log.debug("Trace DB name: {}", apiSpan.getName());
-            TraceContext.print();
-        }
+        TraceContext.print();
+
         // prepare trace context
         TraceContext.addSpanAndUpdate(apiSpan);
 
@@ -158,7 +153,6 @@ public class TraceMyBatisInterceptor implements Interceptor {
                 return;
             }
             // end span
-
             long times = (System.currentTimeMillis() * 1000) - span.getTimestamp();
             // ss annotation
             long time = System.currentTimeMillis() * 1000;
@@ -168,21 +162,6 @@ public class TraceMyBatisInterceptor implements Interceptor {
 
             span.setDuration(times);
 
-            // send trace spans
-            try {
-                List<Span> spans = TraceContext.getSpans();
-                agent.send(spans);
-                if (log.isDebugEnabled()) {
-                    log.debug("DB Send trace data {}.", TraceContext.getSpans());
-                }
-            } catch (Exception e) {
-                log.error("DB 发送到Trace失败", e);
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("DB Trace clear. traceId={}", TraceContext.getTraceId());
-                TraceContext.print();
-            }
         } catch (Exception e) {
             log.error("endTrace error ", e);
         }
