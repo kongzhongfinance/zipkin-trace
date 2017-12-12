@@ -101,7 +101,7 @@ public class TraceMyBatisInterceptor implements Interceptor {
                     span.addToBinary_annotations(BinaryAnnotation.create("SQL.mapper", mapper, null));
                     span.addToBinary_annotations(BinaryAnnotation.create("SQL.database", url, null));
                     span.addToBinary_annotations(BinaryAnnotation.create("SQL.method", statement.getSqlCommandType().name(), null));
-                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.value", statement.getBoundSql(null).getSql(), null));
+                    span.addToBinary_annotations(BinaryAnnotation.create("SQL.sql", statement.getBoundSql(null).getSql(), null));
                 }
             } catch (Exception e) {
                 log.error("Trace DB [解析异常]", e);
