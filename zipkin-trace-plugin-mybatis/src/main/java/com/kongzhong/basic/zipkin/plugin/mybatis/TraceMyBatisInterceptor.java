@@ -84,6 +84,11 @@ public class TraceMyBatisInterceptor implements Interceptor {
                     MappedStatement statement = (MappedStatement) args[0];
                     String mapper = statement.getId();
 
+                    Object parameterObject = null;
+                    if (invocation.getArgs().length > 1) {
+                        parameterObject = invocation.getArgs()[1];
+                    }
+
                     Connection connection = executor.getTransaction().getConnection();
                     String url = connection.getMetaData().getURL();
 
@@ -93,7 +98,7 @@ public class TraceMyBatisInterceptor implements Interceptor {
                         span.addToBinary_annotations(BinaryAnnotation.create("SQL.mapper", mapper, null));
                         span.addToBinary_annotations(BinaryAnnotation.create("SQL.database", url, null));
                         span.addToBinary_annotations(BinaryAnnotation.create("SQL.method", statement.getSqlCommandType().name(), null));
-                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.sql", statement.getBoundSql(null).getSql(), null));
+                        span.addToBinary_annotations(BinaryAnnotation.create("SQL.sql", statement.getBoundSql(parameterObject).getSql(), null));
                         //end trace
                         this.endTrace(span);
                     }
