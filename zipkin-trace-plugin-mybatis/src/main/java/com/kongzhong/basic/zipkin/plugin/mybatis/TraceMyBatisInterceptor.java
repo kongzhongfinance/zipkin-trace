@@ -133,7 +133,7 @@ public class TraceMyBatisInterceptor implements Interceptor {
         apiSpan.setName(method);
 
         apiSpan.setId(id);
-        apiSpan.setTrace_id(TraceContext.getTraceId());
+        apiSpan.setTrace_id(null == TraceContext.getTraceId() ? id : TraceContext.getTraceId());
         apiSpan.setTimestamp(timestamp);
 
         // cs annotation
