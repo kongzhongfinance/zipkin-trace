@@ -1,5 +1,6 @@
 package com.kongzhong.basic.zipkin;
 
+import com.kongzhong.basic.zipkin.util.AppConfiguration;
 import com.twitter.zipkin.gen.BinaryAnnotation;
 import com.twitter.zipkin.gen.Span;
 import lombok.NoArgsConstructor;
@@ -59,15 +60,21 @@ public class TraceContext {
         SPAN_ID.set(spanId);
     }
 
-    public static void addSpan(Span span) {
-        SPANS.get().add(span);
+    public static boolean addSpan(Span span) {
+        List<Span> spans = getSpans();
+        int spanLimitSize = AppConfiguration.getSpanLimitSize();
+        if (spans != null && spans.size() < spanLimitSize) {
+            SPANS.get().add(span);
+            return true;
+        }
+        return false;
     }
 
-    public static void addSpanAndUpdate(Span span) {
-        List<Span> spans = getSafelySpans();
-        spans.add(span);
+    public static boolean addSpanAndUpdate(Span span) {
         TRACE_ID.set(span.getTrace_id());
         SPAN_ID.set(span.getId());
+        getSafelySpans();
+        return addSpan(span);
     }
 
     public static List<Span> getSpans() {
