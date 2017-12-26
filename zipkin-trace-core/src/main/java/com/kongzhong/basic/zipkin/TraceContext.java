@@ -1,5 +1,6 @@
 package com.kongzhong.basic.zipkin;
 
+import com.kongzhong.basic.zipkin.util.AppConfiguration;
 import com.twitter.zipkin.gen.BinaryAnnotation;
 import com.twitter.zipkin.gen.Span;
 import lombok.NoArgsConstructor;
@@ -60,14 +61,30 @@ public class TraceContext {
     }
 
     public static void addSpan(Span span) {
-        SPANS.get().add(span);
+        List<Span> spans = getSpans();
+        int spanLimitSize = AppConfiguration.getSpanLimitSize();
+        if (spans != null) {
+            //大于的忽略
+            if (spans.size() > spanLimitSize - 1) {
+                return;
+            }
+
+            //等于加描述限制
+            if (spans.size() == spanLimitSize - 1) {
+                span.addToBinary_annotations(BinaryAnnotation.create(
+                        "MoreThanSpanLimitSize", spanLimitSize + "", null
+                ));
+            }
+
+            SPANS.get().add(span);
+        }
     }
 
     public static void addSpanAndUpdate(Span span) {
-        List<Span> spans = getSafelySpans();
-        spans.add(span);
         TRACE_ID.set(span.getTrace_id());
         SPAN_ID.set(span.getId());
+        getSafelySpans();
+        addSpan(span);
     }
 
     public static List<Span> getSpans() {
